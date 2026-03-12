@@ -1,1 +1,0 @@
-namespace APIDoctorCheckUp.Domain.Entities;

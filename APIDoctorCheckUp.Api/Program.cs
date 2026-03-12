@@ -8,7 +8,7 @@ builder.Services.AddCorsPolicy(builder.Configuration);
 builder.Services.AddOpenApiDocs();
 builder.Services.AddHealthChecksConfig();
 
-// Day 2: builder.Services.AddPersistence(builder.Configuration)
+builder.Services.AddPersistence(builder.Configuration);
 // Day 3: builder.Services.AddJwtAuthentication(builder.Configuration)
 // Day 3: builder.Services.AddApplicationServices()
 // Day 6: builder.Services.AddSignalR()
