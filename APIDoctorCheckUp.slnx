@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="APIDoctorCheckUp.Api/APIDoctorCheckUp.Api.csproj" />
+  <Project Path="APIDoctorCheckUp.Application/APIDoctorCheckUp.Application.csproj" />
+  <Project Path="APIDoctorCheckUp.Domain/APIDoctorCheckUp.Domain.csproj" />
+  <Project Path="APIDoctorCheckUp.Infrastructure/APIDoctorCheckUp.Infrastructure.csproj" />
+  <Project Path="APIDoctorCheckUp.Tests/APIDoctorCheckUp.Tests.csproj" />
+</Solution>

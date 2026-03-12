@@ -1,0 +1,1 @@
+namespace APIDoctorCheckUp.Application.Interfaces;

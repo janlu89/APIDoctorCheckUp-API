@@ -1,0 +1,1 @@
+namespace APIDoctorCheckUp.Infrastructure.Persistence;
