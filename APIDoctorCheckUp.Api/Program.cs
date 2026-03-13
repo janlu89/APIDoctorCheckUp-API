@@ -11,8 +11,7 @@ builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddApplicationServices();
 builder.Services.AddMonitoringEngine();
-
-// Day 6: builder.Services.AddSignalR()
+builder.Services.AddSignalRServices();
 
 // -- Pipeline ------------------------------------------------------------------
 var app = builder.Build();
@@ -25,7 +24,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.UseHealthChecksEndpoint();
-
-// Day 6: app.MapHub<MonitorHub>("/hubs/monitor")
+app.UseSignalRHubs();
 
 app.Run();

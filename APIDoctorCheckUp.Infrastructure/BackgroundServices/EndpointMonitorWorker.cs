@@ -1,3 +1,4 @@
+using APIDoctorCheckUp.Application.DTOs;
 using APIDoctorCheckUp.Application.Interfaces;
 using APIDoctorCheckUp.Domain.Entities;
 using Microsoft.Extensions.DependencyInjection;
@@ -5,18 +6,12 @@ using Microsoft.Extensions.Logging;
 
 namespace APIDoctorCheckUp.Infrastructure.BackgroundServices;
 
-/// <summary>
-/// Manages the continuous health check loop for a single monitored endpoint.
-/// Each instance runs independently on its own Task, allowing endpoints to be
-/// checked on different intervals without blocking each other.
-/// </summary>
 public sealed class EndpointMonitorWorker
 {
     private readonly int _endpointId;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<EndpointMonitorWorker> _logger;
     private readonly CancellationTokenSource _cts;
-
     private Task? _workerTask;
 
     public int EndpointId => _endpointId;
@@ -50,7 +45,7 @@ public sealed class EndpointMonitorWorker
         if (_workerTask is not null)
         {
             try { await _workerTask; }
-            catch (OperationCanceledException) { /* expected on cancellation */ }
+            catch (OperationCanceledException) { }
         }
 
         _logger.LogInformation(
@@ -59,7 +54,6 @@ public sealed class EndpointMonitorWorker
 
     private async Task RunAsync(CancellationToken ct)
     {
-        // Stagger startup to avoid all workers hitting the database simultaneously
         var startupDelay = TimeSpan.FromSeconds(Random.Shared.Next(1, 15));
         await Task.Delay(startupDelay, ct);
 
@@ -73,6 +67,7 @@ public sealed class EndpointMonitorWorker
                 var checkResultRepo = scope.ServiceProvider.GetRequiredService<ICheckResultRepository>();
                 var checker         = scope.ServiceProvider.GetRequiredService<IEndpointChecker>();
                 var alertEvaluator  = scope.ServiceProvider.GetRequiredService<IAlertEvaluator>();
+                var broadcaster     = scope.ServiceProvider.GetRequiredService<IMonitoringBroadcaster>();
 
                 var endpoint = await endpointRepo.GetByIdAsync(_endpointId, ct);
 
@@ -83,22 +78,36 @@ public sealed class EndpointMonitorWorker
                     return;
                 }
 
-                // Execute the HTTP check and persist the result
-                var result = await checker.CheckAsync(endpoint, ct);
+                var result     = await checker.CheckAsync(endpoint, ct);
                 await checkResultRepo.AddAsync(result, ct);
 
-                // Evaluate thresholds and manage incident lifecycle
-                var newStatus = await alertEvaluator.EvaluateAsync(endpoint, result, ct);
+                var previousStatus = endpoint.CurrentStatus;
+                var newStatus      = await alertEvaluator.EvaluateAsync(endpoint, result, ct);
 
                 if (endpoint.CurrentStatus != newStatus)
                 {
                     endpoint.CurrentStatus = newStatus;
                     await endpointRepo.UpdateAsync(endpoint, ct);
 
-                    _logger.LogInformation(
-                        "Endpoint {EndpointName} status changed: {OldStatus} ? {NewStatus}",
-                        endpoint.Name, endpoint.CurrentStatus, newStatus);
+                    // Broadcast the status change to all connected clients
+                    await broadcaster.BroadcastStatusChangedAsync(new StatusChangedBroadcast(
+                        EndpointId:     endpoint.Id,
+                        EndpointName:   endpoint.Name,
+                        PreviousStatus: previousStatus,
+                        NewStatus:      newStatus,
+                        ChangedAt:      DateTime.UtcNow), ct);
                 }
+
+                // Broadcast the check result regardless of whether status changed
+                await broadcaster.BroadcastCheckResultAsync(new CheckResultBroadcast(
+                    EndpointId:     endpoint.Id,
+                    EndpointName:   endpoint.Name,
+                    CheckedAt:      result.CheckedAt,
+                    StatusCode:     result.StatusCode,
+                    ResponseTimeMs: result.ResponseTimeMs,
+                    IsSuccess:      result.IsSuccess,
+                    ErrorMessage:   result.ErrorMessage,
+                    CurrentStatus:  newStatus), ct);
 
                 await Task.Delay(TimeSpan.FromSeconds(endpoint.CheckIntervalSeconds), ct);
             }
