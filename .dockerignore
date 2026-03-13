@@ -1,20 +1,8 @@
-# Build outputs — Docker rebuilds these from source
-**/bin/
-**/obj/
-
-# Local environment secrets — never bake these into an image
-.env
-*.env.local
-
-# SQLite database files should not be baked into the image
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/*.user
 *.db
 *.db-shm
 *.db-wal
-
-# IDE folders
-.vs/
-.idea/
-.vscode/
-
-# Test results
-**/TestResults/
