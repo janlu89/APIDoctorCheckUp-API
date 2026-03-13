@@ -6,21 +6,9 @@ namespace APIDoctorCheckUp.Api.Extensions;
 
 public static class MonitoringExtensions
 {
-    /// <summary>
-    /// Registers the monitoring engine: the HTTP client, the endpoint checker,
-    /// and the background orchestrator that manages per-endpoint workers.
-    ///
-    /// The orchestrator is registered as a singleton first, then referenced by
-    /// AddHostedService and IMonitoringOrchestrator. This ensures the same
-    /// instance is used everywhere — the hosted service lifetime and any
-    /// controller that injects IMonitoringOrchestrator both get the same object.
-    /// </summary>
     public static IServiceCollection AddMonitoringEngine(
         this IServiceCollection services)
     {
-        // Named HttpClient with a 20-second timeout per check request.
-        // Using IHttpClientFactory means connections are pooled and recycled
-        // correctly, avoiding the socket exhaustion issues of newing HttpClient directly.
         services.AddHttpClient("MonitoringClient", client =>
         {
             client.Timeout = TimeSpan.FromSeconds(20);
@@ -29,9 +17,11 @@ public static class MonitoringExtensions
         });
 
         services.AddScoped<IEndpointChecker, EndpointChecker>();
+        services.AddScoped<IAlertEvaluator, AlertEvaluator>();
 
-        // Register the orchestrator as a singleton so it can be resolved both
-        // as IHostedService (by the host) and as IMonitoringOrchestrator (by controllers)
+        // The orchestrator is registered as a singleton and resolved as both
+        // IHostedService and IMonitoringOrchestrator so the same instance
+        // is shared between the host lifetime and the API controllers.
         services.AddSingleton<MonitoringOrchestrator>();
         services.AddHostedService(sp => sp.GetRequiredService<MonitoringOrchestrator>());
         services.AddSingleton<IMonitoringOrchestrator>(
