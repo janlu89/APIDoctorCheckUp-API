@@ -1,0 +1,38 @@
+# -- Build outputs -------------------------------------------------------------
+bin/
+obj/
+
+# -- Visual Studio -------------------------------------------------------------
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# -- Rider / ReSharper ---------------------------------------------------------
+.idea/
+*.DotSettings.user
+
+# -- VS Code -------------------------------------------------------------------
+.vscode/
+
+# -- Environment secrets -------------------------------------------------------
+# Never commit real credentials — use .env.example as the committed template
+.env
+*.env.local
+
+# -- SQLite database files -----------------------------------------------------
+*.db
+*.db-shm
+*.db-wal
+
+# -- Test results --------------------------------------------------------------
+TestResults/
+coverage/
+
+# -- macOS ---------------------------------------------------------------------
+.DS_Store
+
+# -- Docker --------------------------------------------------------------------
+# Keep .dockerignore committed — only ignore local override files
+docker-compose.override.yml
