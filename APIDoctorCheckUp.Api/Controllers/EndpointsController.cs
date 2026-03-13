@@ -10,13 +10,16 @@ namespace APIDoctorCheckUp.Api.Controllers;
 public class EndpointsController : ControllerBase
 {
     private readonly IEndpointService _endpointService;
+    private readonly IMonitoringOrchestrator _orchestrator;
 
-    public EndpointsController(IEndpointService endpointService)
+    public EndpointsController(
+        IEndpointService endpointService,
+        IMonitoringOrchestrator orchestrator)
     {
         _endpointService = endpointService;
+        _orchestrator    = orchestrator;
     }
 
-    /// <summary>Returns all monitored endpoints. Public.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<EndpointDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(CancellationToken ct)
@@ -25,7 +28,6 @@ public class EndpointsController : ControllerBase
         return Ok(endpoints);
     }
 
-    /// <summary>Returns a single endpoint by ID. Public.</summary>
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(EndpointDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -35,7 +37,6 @@ public class EndpointsController : ControllerBase
         return endpoint is null ? NotFound() : Ok(endpoint);
     }
 
-    /// <summary>Creates a new monitored endpoint. Requires JWT.</summary>
     [HttpPost]
     [Authorize]
     [ProducesResponseType(typeof(EndpointDto), StatusCodes.Status201Created)]
@@ -46,10 +47,13 @@ public class EndpointsController : ControllerBase
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
         var created = await _endpointService.CreateAsync(dto, ct);
+
+        // Signal the orchestrator to start monitoring the new endpoint immediately
+        await _orchestrator.StartEndpointAsync(created.Id);
+
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    /// <summary>Updates an existing endpoint. Requires JWT.</summary>
     [HttpPut("{id:int}")]
     [Authorize]
     [ProducesResponseType(typeof(EndpointDto), StatusCodes.Status200OK)]
@@ -57,9 +61,7 @@ public class EndpointsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(
-        int id,
-        [FromBody] UpdateEndpointDto dto,
-        CancellationToken ct)
+        int id, [FromBody] UpdateEndpointDto dto, CancellationToken ct)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -67,10 +69,6 @@ public class EndpointsController : ControllerBase
         return updated is null ? NotFound() : Ok(updated);
     }
 
-    /// <summary>
-    /// Deletes an endpoint and all its history. Requires JWT.
-    /// The background worker for this endpoint will be stopped on Day 4.
-    /// </summary>
     [HttpDelete("{id:int}")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -78,18 +76,19 @@ public class EndpointsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
+        // Stop the worker before deleting so the worker does not attempt
+        // a check on an endpoint that no longer exists in the database
+        await _orchestrator.StopEndpointAsync(id);
+
         var deleted = await _endpointService.DeleteAsync(id, ct);
         return deleted ? NoContent() : NotFound();
     }
 
-    /// <summary>Returns historical check results for an endpoint. Public.</summary>
     [HttpGet("{id:int}/checks")]
     [ProducesResponseType(typeof(IEnumerable<CheckResultDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetChecks(
-        int id,
-        [FromQuery] int limit = 100,
-        CancellationToken ct = default)
+        int id, [FromQuery] int limit = 100, CancellationToken ct = default)
     {
         var endpoint = await _endpointService.GetByIdAsync(id, ct);
         if (endpoint is null) return NotFound();
@@ -98,7 +97,6 @@ public class EndpointsController : ControllerBase
         return Ok(checks);
     }
 
-    /// <summary>Returns uptime statistics for an endpoint. Public.</summary>
     [HttpGet("{id:int}/stats")]
     [ProducesResponseType(typeof(EndpointStatsDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

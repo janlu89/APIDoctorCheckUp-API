@@ -10,6 +10,7 @@ builder.Services.AddHealthChecksConfig();
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddApplicationServices();
+builder.Services.AddMonitoringEngine();
 
 // Day 6: builder.Services.AddSignalR()
 
