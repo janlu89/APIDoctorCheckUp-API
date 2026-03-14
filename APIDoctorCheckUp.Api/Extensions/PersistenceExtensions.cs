@@ -1,5 +1,6 @@
 using APIDoctorCheckUp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace APIDoctorCheckUp.Api.Extensions;
 
@@ -16,7 +17,10 @@ public static class PersistenceExtensions
         if (connectionString.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
         {
             services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlite(connectionString));
+                options
+                    .UseSqlite(connectionString)
+                    .ConfigureWarnings(w =>
+                        w.Ignore(RelationalEventId.PendingModelChangesWarning)));
         }
         else
         {
