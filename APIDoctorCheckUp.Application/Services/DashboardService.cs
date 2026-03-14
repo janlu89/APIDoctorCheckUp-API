@@ -15,29 +15,31 @@ public class DashboardService : IDashboardService
         ICheckResultRepository checkResults,
         IUptimeCalculator uptime)
     {
-        _endpoints = endpoints;
+        _endpoints    = endpoints;
         _checkResults = checkResults;
-        _uptime = uptime;
+        _uptime       = uptime;
     }
 
     public async Task<DashboardSummaryDto> GetSummaryAsync(CancellationToken ct = default)
     {
         var endpoints = (await _endpoints.GetAllAsync(ct)).ToList();
 
-        var summaries = await Task.WhenAll(endpoints.Select(async e =>
-        {
-            var latest  = await _checkResults.GetLatestByEndpointIdAsync(e.Id, ct);
-            var uptime  = await _uptime.CalculateAsync(e.Id, 24, ct);
+        var summaries = new List<EndpointSummaryDto>();
 
-            return new EndpointSummaryDto(
+        foreach (var e in endpoints)
+        {
+            var latest = await _checkResults.GetLatestByEndpointIdAsync(e.Id, ct);
+            var uptime = await _uptime.CalculateAsync(e.Id, 24, ct);
+
+            summaries.Add(new EndpointSummaryDto(
                 Id:                 e.Id,
                 Name:               e.Name,
                 Url:                e.Url,
                 CurrentStatus:      e.CurrentStatus,
                 LastResponseTimeMs: latest?.ResponseTimeMs,
                 LastCheckedAt:      latest?.CheckedAt,
-                UptimeLast24Hours:  uptime);
-        }));
+                UptimeLast24Hours:  uptime));
+        }
 
         return new DashboardSummaryDto(
             TotalEndpoints: endpoints.Count,
