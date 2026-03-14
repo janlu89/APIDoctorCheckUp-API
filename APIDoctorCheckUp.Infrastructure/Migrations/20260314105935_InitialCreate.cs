@@ -1,11 +1,12 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
-namespace APIDoctorCheckUp.Infrastructure.Persistence.Migrations
+namespace APIDoctorCheckUp.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -17,15 +18,15 @@ namespace APIDoctorCheckUp.Infrastructure.Persistence.Migrations
                 name: "MonitoredEndpoints",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Url = table.Column<string>(type: "TEXT", maxLength: 2048, nullable: false),
-                    ExpectedStatusCode = table.Column<int>(type: "INTEGER", nullable: false, defaultValue: 200),
-                    CheckIntervalSeconds = table.Column<int>(type: "INTEGER", nullable: false, defaultValue: 60),
-                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: true),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    CurrentStatus = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Url = table.Column<string>(type: "character varying(2048)", maxLength: 2048, nullable: false),
+                    ExpectedStatusCode = table.Column<int>(type: "integer", nullable: false, defaultValue: 200),
+                    CheckIntervalSeconds = table.Column<int>(type: "integer", nullable: false, defaultValue: 60),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CurrentStatus = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -36,12 +37,12 @@ namespace APIDoctorCheckUp.Infrastructure.Persistence.Migrations
                 name: "AlertThresholds",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    EndpointId = table.Column<int>(type: "INTEGER", nullable: false),
-                    ResponseTimeWarningMs = table.Column<int>(type: "INTEGER", nullable: false, defaultValue: 1000),
-                    ResponseTimeCriticalMs = table.Column<int>(type: "INTEGER", nullable: false, defaultValue: 3000),
-                    ConsecutiveFailuresDown = table.Column<int>(type: "INTEGER", nullable: false, defaultValue: 3)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    EndpointId = table.Column<int>(type: "integer", nullable: false),
+                    ResponseTimeWarningMs = table.Column<int>(type: "integer", nullable: false, defaultValue: 1000),
+                    ResponseTimeCriticalMs = table.Column<int>(type: "integer", nullable: false, defaultValue: 3000),
+                    ConsecutiveFailuresDown = table.Column<int>(type: "integer", nullable: false, defaultValue: 3)
                 },
                 constraints: table =>
                 {
@@ -58,14 +59,14 @@ namespace APIDoctorCheckUp.Infrastructure.Persistence.Migrations
                 name: "CheckResults",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    EndpointId = table.Column<int>(type: "INTEGER", nullable: false),
-                    CheckedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    StatusCode = table.Column<int>(type: "INTEGER", nullable: true),
-                    ResponseTimeMs = table.Column<long>(type: "INTEGER", nullable: false),
-                    IsSuccess = table.Column<bool>(type: "INTEGER", nullable: false),
-                    ErrorMessage = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    EndpointId = table.Column<int>(type: "integer", nullable: false),
+                    CheckedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    StatusCode = table.Column<int>(type: "integer", nullable: true),
+                    ResponseTimeMs = table.Column<long>(type: "bigint", nullable: false),
+                    IsSuccess = table.Column<bool>(type: "boolean", nullable: false),
+                    ErrorMessage = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -82,12 +83,12 @@ namespace APIDoctorCheckUp.Infrastructure.Persistence.Migrations
                 name: "Incidents",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    EndpointId = table.Column<int>(type: "INTEGER", nullable: false),
-                    StartedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    ResolvedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    TriggerReason = table.Column<string>(type: "TEXT", maxLength: 30, nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    EndpointId = table.Column<int>(type: "integer", nullable: false),
+                    StartedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ResolvedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    TriggerReason = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false)
                 },
                 constraints: table =>
                 {
