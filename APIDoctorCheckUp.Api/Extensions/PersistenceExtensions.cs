@@ -13,9 +13,16 @@ public static class PersistenceExtensions
             ?? throw new InvalidOperationException(
                 "Connection string 'DefaultConnection' is not configured.");
 
-        // SQLite for local development, PostgreSQL (Npgsql) wired on Day 13
-        services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlite(connectionString));
+        if (connectionString.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlite(connectionString));
+        }
+        else
+        {
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseNpgsql(connectionString));
+        }
 
         return services;
     }
